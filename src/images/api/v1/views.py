@@ -13,7 +13,6 @@ from images.api.serializers import (
     ImageMetadataSerializer,
     ImageUploadSerializer,
     ImageSearchSerializer,
-    SearchResultSerializer,
 )
 from images.models import ImageMetadata
 from embeddings.embed_model import EmbeddingModel
@@ -127,8 +126,10 @@ class ImageViewSet(
         query_id = str(uuid.uuid4())
         query_name = f"search_queries/{query_id}_{image_file.name}"
 
-        from storage.boto3 import ImageStorage
-        temp_storage = ImageStorage()
+        from storage.custom_s3 import ExternalS3Storage
+        temp_storage = ExternalS3Storage()
+        temp_storage.bucket_name = settings.AWS_STORAGE_BUCKET_NAME
+        temp_storage.location = 'images'
         temp_path = temp_storage.save(query_name, image_file)
         query_image_url = temp_storage.url(temp_path)
 

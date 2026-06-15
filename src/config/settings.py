@@ -142,7 +142,15 @@ STATICFILES_DIRS = [
 MEDIA_URL = '/media/'
 
 
-DEFAULT_FILE_STORAGE = 'storage.custom_s3.ExternalS3Storage'
+# Django 6.x uses STORAGES instead of DEFAULT_FILE_STORAGE
+STORAGES = {
+    "default": {
+        "BACKEND": "storage.custom_s3.ExternalS3Storage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 AWS_S3_ENDPOINT_URL = os.getenv("S3_ENDPOINT_URL", "http://minio:9000")
 AWS_ACCESS_KEY_ID = os.getenv("S3_ACCESS_KEY_ID", "minioadmin")

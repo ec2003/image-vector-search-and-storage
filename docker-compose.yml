@@ -47,7 +47,7 @@ services:
   # Qdrant — vector database for image embeddings
   # ──────────────────────────────────────────
   qdrant:
-    image: qdrant/qdrant:latest
+    image: qdrant/qdrant:v1.18
     container_name: qdrant
     expose:
       - "6333"
@@ -60,7 +60,7 @@ services:
   # MinIO — S3-compatible object storage
   # ──────────────────────────────────────────
   minio:
-    image: minio/minio:latest
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
     container_name: minio
     # No external ports — only accessible internally via Docker network
     # (Nginx reverse proxy handles external access for S3 API on port 9000)
@@ -86,7 +86,7 @@ services:
   # Create S3 bucket on startup
   # ──────────────────────────────────────────
   minio-init:
-    image: minio/mc:latest
+    image: minio/mc:RELEASE.2025-08-13T08-35-41Z
     container_name: minio-init
     depends_on:
       minio:
@@ -129,6 +129,9 @@ services:
       NGINX_PROXY_ENVIRONMENT: ${NGINX_PROXY_ENVIRONMENT:-False}
       DEBUG: ${DEBUG:-True}
       USE_SQLITE: "False"
+      DJANGO_SUPERUSER_USERNAME: ${DJANGO_SUPERUSER_USERNAME:-admin}
+      DJANGO_SUPERUSER_PASSWORD: ${DJANGO_SUPERUSER_PASSWORD:-admin}
+      DJANGO_SUPERUSER_EMAIL: ${DJANGO_SUPERUSER_EMAIL:-}
     depends_on:
       postgres:
         condition: service_started
@@ -144,6 +147,7 @@ services:
         python manage.py makemigrations &&
         python manage.py migrate --noinput &&
         python manage.py collectstatic --noinput 2>/dev/null || true &&
+        python manage.py createsuperuser --no-input 2>/dev/null || true &&
         gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 4 --reload
       "
     restart: unless-stopped

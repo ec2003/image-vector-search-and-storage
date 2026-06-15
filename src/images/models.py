@@ -2,13 +2,11 @@ from django.db import models
 
 from uuid import uuid7
 
-from storage.boto3 import ImageStorage
-
 
 class ImageMetadata(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid7, editable=False)
     name = models.CharField(max_length=255)
-    image = models.FileField(storage=ImageStorage())
+    image = models.FileField()  # Uses DEFAULT_FILE_STORAGE (ExternalS3Storage)
     uploaded_at = models.DateTimeField(auto_now_add=True)
     file_size = models.BigIntegerField(null=True, blank=True)
     vectorized = models.BooleanField(default=False)
