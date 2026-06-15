@@ -23,6 +23,40 @@ services:
     restart: unless-stopped
 
   # ──────────────────────────────────────────
+  # PostgreSQL — image metadata database
+  # ──────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres
+    expose:
+      - "5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-image_search}
+      POSTGRES_USER: ${POSTGRES_USER:-image_search}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-image_search_password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-image_search} -d ${POSTGRES_DB:-image_search}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ──────────────────────────────────────────
+  # Qdrant — vector database for image embeddings
+  # ──────────────────────────────────────────
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: qdrant
+    expose:
+      - "6333"
+      - "6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    restart: unless-stopped
+
+  # ──────────────────────────────────────────
   # MinIO — S3-compatible object storage
   # ──────────────────────────────────────────
   minio:
@@ -94,7 +128,12 @@ services:
       S3_EXTERNAL_ENDPOINT_URL: ${S3_EXTERNAL_ENDPOINT_URL:-}
       NGINX_PROXY_ENVIRONMENT: ${NGINX_PROXY_ENVIRONMENT:-False}
       DEBUG: ${DEBUG:-True}
+      USE_SQLITE: "False"
     depends_on:
+      postgres:
+        condition: service_started
+      qdrant:
+        condition: service_started
       minio-init:
         condition: service_completed_successfully
     volumes:
@@ -111,5 +150,7 @@ services:
 
 volumes:
   minio_data:
+  postgres_data:
+  qdrant_data:
   static_volume:
   nginx_ssl:
